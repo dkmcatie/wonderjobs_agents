@@ -1,0 +1,42 @@
+# Aliyun Qwen API 配置
+qwen:
+  api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  api_key: "${ALIYUN_API_KEY}"  # 从环境变量读取
+  model: "qwen-omni-mini"
+  timeout: 30
+
+# WebSearch API 配置（未来使用）
+web_search:
+  enabled: false
+  provider: "serpapi"  # 或 "google_custom_search"
+  api_key: "${WEB_SEARCH_API_KEY}"
+
+# RAG 配置
+rag:
+  enabled: false  # 当前禁用，后续可接入真实服务
+  # type: "pinecone"
+  # endpoint: "https://..."
+  # api_key: "${RAG_API_KEY}"
+
+# 题目生成配置
+generation:
+  total_questions: 20
+  rag_reference_count: 10
+  web_search_reference_count: 5
+
+  # 提问环节分布
+  phase_distribution:
+    简历提问: 5
+    技术能力提问: 8
+    项目经验提问: 4
+    行为/软技能提问: 3
+
+# 输出配置
+output:
+  format: ["json", "markdown"]
+  directory: "./outputs"
+  json_indent: 2
+
+# Prompt 配置
+prompts:
+  path: "./prompts.yaml"
