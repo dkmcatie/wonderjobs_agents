@@ -27,7 +27,13 @@ def call_api(system_prompt: str, user_prompt: str, config: Dict) -> str:
         "stream": False
     }
 
-    resp = requests.post(f"{api_base}/chat/completions", headers=headers, json=payload, timeout=timeout)
+    # 如果 api_base 以 /compatible-mode/v1 结尾，使用兼容模式
+    if api_base.endswith("/compatible-mode/v1"):
+        endpoint = f"{api_base}/chat/completions"
+    else:
+        endpoint = f"{api_base}/services/aigc/text-generation/generation"
+
+    resp = requests.post(endpoint, headers=headers, json=payload, timeout=timeout)
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"]
 

@@ -2,7 +2,7 @@
 qwen:
   api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   api_key: "${ALIYUN_API_KEY}"  # 从环境变量读取
-  model: "qwen-omni-mini"
+  model: "qwen-max"
   timeout: 30
 
 # WebSearch API 配置（未来使用）

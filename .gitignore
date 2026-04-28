@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.env
+.env.local
+
+# 输出文件
+outputs/
+examiner/outputs/*
+!examiner/outputs/.gitkeep
+
+# 临时目录
+.cc-connect/
+*.log
