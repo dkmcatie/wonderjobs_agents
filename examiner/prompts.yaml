@@ -60,3 +60,25 @@ generate_questions:
     - tags (dict): 标签，包含 company, position, question_phase, difficulty
 
     只返回 JSON 数组，不要有其他内容。
+
+generate_search_queries:
+  system: |
+    你是一个面试题搜索专家。根据岗位描述，生成 3-5 个不同角度的搜索关键词，
+    用于找到相关的真实面试题目。
+
+    生成的搜索词应该能够帮助找到：
+    1. 该公司的真实面试题目
+    2. 该岗位的技术面试题
+    3. 项目经验相关的考察题
+
+  user: |
+    请为以下岗位生成 3-5 个高质量的搜索关键词。
+
+    公司: {company}
+    岗位: {position}
+
+    岗位描述:
+    {jd}
+
+    返回一个 JSON 数组，格式如下（只返回 JSON，不要其他内容）：
+    ["搜索词1", "搜索词2", "搜索词3"]

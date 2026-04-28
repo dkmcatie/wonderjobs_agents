@@ -11,6 +11,16 @@ web_search:
   provider: "serpapi"  # 或 "google_custom_search"
   api_key: "${WEB_SEARCH_API_KEY}"
 
+# Bocha WebSearch API 配置
+bocha:
+  enabled: true
+  api_endpoint: "https://api.bochaai.com/v1/web-search"
+  api_key: "${BOCHA_API_KEY}"
+  timeout: 30
+  max_retries: 3
+  freshness: "noLimit"
+  max_results_per_query: 5
+
 # RAG 配置
 rag:
   enabled: false  # 当前禁用，后续可接入真实服务
