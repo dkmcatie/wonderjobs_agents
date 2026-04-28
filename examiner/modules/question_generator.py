@@ -21,7 +21,14 @@ def generate_questions_pool(
     print(f"[流程] 获取 {len(rag_questions)} 道 RAG 参考题")
 
     print("[流程] 步骤 2: WebSearch")
-    web_questions = search_interview_questions(company, position, limit=web_count, config=config)
+    web_questions = search_interview_questions(
+        jd=jd,
+        company=company,
+        position=position,
+        prompts=prompts,
+        config=config,
+        limit=web_count
+    )
     print(f"[流程] 获取 {len(web_questions)} 道 WebSearch 参考题")
 
     print("[流程] 步骤 3: Qwen 生成")
