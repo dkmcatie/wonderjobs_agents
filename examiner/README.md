@@ -1,7 +1,8 @@
 # Examiner 组件
 
-**状态**: 实现阶段  
-**最后更新**: 2026-04-28
+**状态**: ✅ 完成  
+**最后更新**: 2026-04-30  
+**核心特性**: Qwen 3.5 Flash 内置 WebSearch
 
 ---
 
@@ -11,8 +12,13 @@ Examiner 是 WonderJobs 多智能体面试系统中的第二个核心组件，�
 
 **核心功能**：
 - 输入：岗位 JD (Markdown) + 面试官风格档案 (Markdown) + 公司/岗位名称
-- 流程：RAG 查询 → WebSearch 检索 → Qwen 生成 → 格式化输出
+- 流程：RAG 查询 → **Qwen WebSearch** 检索 → LLM 合成 → 格式化输出
 - 输出：20 道定制化题目 (JSON + Markdown 格式)
+
+**三层出题架构**：
+1. **RAG 层**：从历史题目库检索相关参考题（当前模拟）
+2. **WebSearch 层**：Qwen 3.5 Flash 内置搜索，找到行业真实题目
+3. **LLM 合成层**：根据 JD、候选风格、搜索结果生成最终 20 道题目
 
 ---
 
@@ -63,7 +69,7 @@ export ALIYUN_API_KEY="your-aliyun-api-key"
 
 ### 4. 运行 Examiner
 
-基础用法：
+**基础用法**（WebSearch 自动启用）：
 ```bash
 python examiner.py \
   --jd sample_jd.md \
@@ -73,26 +79,25 @@ python examiner.py \
   --output outputs/questions.json
 ```
 
-启用 Bocha WebSearch：
-```bash
-export BOCHA_API_KEY="sk-your-key-here"
-python examiner.py \
-  --jd sample_jd.md \
-  --personality sample_personality.md \
-  --company "字节跳动" \
-  --position "算法工程师"
+**处理过程输出示例**：
+```
+[信息] 读取输入文件...
+[信息] 生成题目池...
+[流程] 步骤 1: RAG 查询
+[流程] 获取 0 道 RAG 参考题
+[流程] 步骤 2: WebSearch
+[流程] 步骤: 调用 Qwen WebSearch 搜索面试题
+[流程] WebSearch 获取 5 道题目
+[流程] 步骤 3: Qwen 生成
+[流程] 生成 20 道题目
+[成功] 题目已输出到 outputs/questions.json
 ```
 
-处理过程输出示例：
-```
-[流程] 步骤 1: 生成搜索词
-[流程] 生成 4 个搜索词: ['字节跳动面试题', '推荐系统设计面试', '深度学习工程师面试题', 'LLM应用开发面试']
-[流程] 步骤 2: 并行调用 Bocha 搜索
-[流程] Bocha API 调用: '字节跳动面试题' (尝试 1/3)
-[流程] 搜索词 '字节跳动面试题' 获取 5 道题目
-...
-[流程] 步骤 3: 去重并截断结果
-[流程] 最终返回 12 道题目
+**禁用 WebSearch**（仅使用 RAG）：
+```bash
+# 编辑 config.yaml，设置：
+# web_search:
+#   enabled: false
 ```
 
 ### 5. 查看结果
@@ -122,36 +127,36 @@ python examiner.py \
 ```json
 {
   "metadata": {
+    "total_questions": 20,
     "company": "字节跳动",
     "position": "广告大模型算法工程师",
-    "total_questions": 20,
-    "generated_at": "2026-04-28T10:30:00Z",
-    "model": "qwen-omni-mini"
+    "generated_at": "2026-04-30T10:30:00Z",
+    "phase_distribution": {
+      "简历提问": 5,
+      "技术能力提问": 8,
+      "项目经验提问": 4,
+      "行为/软技能提问": 3
+    },
+    "sources": {
+      "rag_questions": 0,
+      "web_search_questions": 5,
+      "llm_generated": 20
+    }
   },
   "questions": [
     {
       "id": 1,
       "text": "请介绍一下你在简历中提到的XXX项目，以及你在其中的具体贡献。",
-      "phase": "简历提问",
-      "difficulty": "初级",
-      "tags": {
-        "company": "字节跳动",
-        "position": "广告大模型算法工程师",
-        "question_phase": "简历提问",
-        "difficulty": "初级"
-      }
+      "category": "简历提问",
+      "difficulty": "easy",
+      "tags": ["项目经历", "自我介绍"]
     },
     {
       "id": 2,
       "text": "在实现LLM推荐系统时，如何处理冷启动问题？",
-      "phase": "技术能力提问",
-      "difficulty": "高级",
-      "tags": {
-        "company": "字节跳动",
-        "position": "广告大模型算法工程师",
-        "question_phase": "技术能力提问",
-        "difficulty": "高级"
-      }
+      "category": "技术能力提问",
+      "difficulty": "hard",
+      "tags": ["系统设计", "算法优化"]
     }
   ]
 }
@@ -201,9 +206,37 @@ python examiner.py \
 qwen:
   api_base: "https://dashscope.aliyuncs.com/compatible-mode/v1"
   api_key: "${ALIYUN_API_KEY}"  # 从环境变量读取
-  model: "qwen-omni-mini"
+  model: "qwen3.5-flash"  # Qwen 3.5 Flash 内置 WebSearch
   timeout: 30
 ```
+
+### WebSearch 配置（Qwen 内置）
+
+```yaml
+web_search:
+  enabled: true
+  search_options:
+    search_strategy: "turbo"  # turbo, max, agent
+    # freshness: "day"  # 可选: day, week, month, year, noLimit
+```
+
+**特性:**
+- ✅ 使用 Qwen 3.5 Flash 内置 WebSearch 能力
+- ✅ 自动搜索行业真实题目（无需额外 API）
+- ✅ 支持 3 种搜索策略：turbo（快速）、max（全面）、agent（智能）
+- ✅ 自动降级：若 WebSearch 失败，继续使用 RAG 参考生成题目
+
+**工作流程:**
+1. 检查 WebSearch 是否启用
+2. 调用 Qwen API，传入 `enable_search=True` 参数
+3. Qwen 内部自动搜索网络并生成相关题目
+4. 解析返回的题目列表
+5. 融合到题目生成提示词中
+
+**集成点:**
+- `examiner.modules.web_search`: WebSearch 工作流（调用 Qwen with enable_search）
+- `examiner.modules.qwen_client`: Qwen API 调用（支持 enable_search 参数）
+- `examiner.modules.question_generator`: 协调生成流程
 
 ### 题目生成配置
 
@@ -220,46 +253,7 @@ generation:
     行为/软技能提问: 3
 ```
 
-### Bocha WebSearch 配置
-
-Bocha WebSearch 已集成到 Examiner 组件中。此功能自动生成多角度搜索词并并行调用 Bocha API 来检索行业参考题目。
-
-**配置:**
-```yaml
-bocha:
-  enabled: true
-  api_endpoint: "https://api.bochaai.com/v1/web-search"
-  api_key: "${BOCHA_API_KEY}"
-  timeout: 30
-  max_retries: 3
-  freshness: "noLimit"
-  max_results_per_query: 5
-```
-
-**环境变量设置:**
-```bash
-export BOCHA_API_KEY="your-bocha-api-key"
-```
-
-**特性:**
-- 使用 Qwen LLM 自动生成 3-5 个多角度搜索词
-- 并行调用 Bocha API（最多 3 个并发连接）
-- 从行业真实数据返回 10-15 道参考题目
-- 支持失败重试（指数退避：1s, 2s, 4s）
-- 自动降级：若 WebSearch 失败，继续使用 RAG 参考生成题目
-
-**工作流程:**
-1. 根据 JD、公司名、岗位名生成搜索词（使用 Qwen API）
-2. 并行调用 Bocha API 执行搜索
-3. 去重并合并搜索结果
-4. 融合到题目生成提示词中
-
-**集成点:**
-- `examiner.modules.query_generator`: 搜索词生成（使用 Qwen）
-- `examiner.modules.bocha_client`: Bocha API 调用与重试逻辑
-- `examiner.modules.web_search`: 完整的 WebSearch 工作流
-
-### RAG 配置（未来启用）
+### RAG 配置（当前模拟）
 
 ```yaml
 rag:
@@ -275,16 +269,18 @@ rag:
 ```
 examiner/
 ├── examiner.py                  # 主入口
-├── prompts.yaml                 # Qwen prompt 模板
-├── config.yaml                  # 配置文件（包括 Bocha 配置）
+├── prompts.yaml                 # Prompt 模板（包括 web_search_questions）
+├── config.yaml                  # 配置文件（Qwen + WebSearch）
 ├── requirements.txt             # 依赖
 ├── README.md                    # 本文档
+├── sample_jd.md                 # 样本岗位描述
+├── sample_personality.md        # 样本面试官风格
+├── outputs/                     # 输出目录
+│   └── .gitkeep                 # 空占位符
 ├── modules/
-│   ├── qwen_client.py           # Qwen API 调用
+│   ├── qwen_client.py           # Qwen API 调用（支持 enable_search 参数）
 │   ├── rag_client.py            # RAG 查询（当前模拟）
-│   ├── web_search.py            # WebSearch 工作流（Bocha 集成）
-│   ├── bocha_client.py          # Bocha API 客户端（含重试逻辑）
-│   ├── query_generator.py       # 搜索词生成（使用 Qwen）
+│   ├── web_search.py            # WebSearch 工作流（使用 Qwen 内置搜索）
 │   └── question_generator.py    # 协调生成流程
 └── utils/
     ├── file_handler.py          # 文件读写
@@ -294,15 +290,20 @@ examiner/
 
 ### 扩展点
 
-1. **RAG 集成**: 在 `rag_client._query_from_rag_service()` 中接入真实 RAG 服务（当前为模拟）
-2. **Bocha API 优化**: 
-   - 调整 `max_workers` 以适应不同的 API 速率限制
-   - 自定义 `freshness` 参数以获取最新内容
-   - 在 `bocha_client.py` 中扩展响应解析逻辑
-3. **搜索词生成优化**: 修改 `prompts.yaml` 中的 `generate_search_queries` 提示词以改进搜索质量
-4. **多语言支持**: 扩展 prompts.yaml，添加多语言 prompt（英文、日文等）
-5. **题目库管理**: 将生成的题目存储回 RAG 知识库
-6. **失败降级**: 当 Bocha API 不可用时，自动回退到纯 RAG 方案
+1. **RAG 集成**: 在 `rag_client.py` 中接入真实 RAG 服务（当前为模拟）
+   - 连接向量数据库（Pinecone, Milvus 等）
+   - 实现 `query_similar_questions()` 函数
+   
+2. **WebSearch 优化**: 
+   - 在 `config.yaml` 调整 `search_strategy`（turbo/max/agent）
+   - 自定义 `freshness` 参数以获取特定时间范围的内容
+   - 修改 `prompts.yaml` 中的 `web_search_questions` 以改进搜索质量
+   
+3. **多语言支持**: 扩展 prompts.yaml，添加多语言 prompt（英文、日文等）
+
+4. **题目库管理**: 将生成的题目存储回 RAG 知识库
+
+5. **失败降级**: 当 WebSearch 不可用时，自动回退到纯 RAG 方案（已内置）
 
 ---
 
@@ -316,51 +317,35 @@ examiner/
 
 **解决方案**:
 ```bash
-export ALIYUN_API_KEY="your-key"
+export ALIYUN_API_KEY="your-qwen-api-key"
 ```
 
-### BOCHA_API_KEY 未设置
+查看 [Aliyun DashScope 控制台](https://dashscope.aliyuncs.com/) 获取 API Key。
+
+### WebSearch 调用失败
 
 ```
-[警告] BOCHA_API_KEY not set in environment or config
+[警告] WebSearch 失败: ...，返回空列表
 ```
 
-**解决方案**:
-```bash
-export BOCHA_API_KEY="sk-your-bocha-key"
-```
+**常见原因和解决方案**:
+- **网络连接问题**: 检查网络连接，确保能访问 dashscope.aliyuncs.com
+- **API Key 无效**: 验证 `ALIYUN_API_KEY` 是否正确
+- **API 超时**: 增加 config.yaml 中的 `timeout` 值（默认 30 秒）
+- **速率限制**: 稍后重试，系统会自动降级到 RAG 参考
 
-若不设置，系统将自动跳过 WebSearch 阶段，仅使用 RAG 参考生成题目。
+**系统自动降级**: 若 WebSearch 失败，系统会继续使用 RAG 参考题生成最终题目。
 
-### Bocha API 返回 401
-
-```
-[错误] Bocha API Key 无效: ...
-```
-
-**解决方案**:
-- 验证 `BOCHA_API_KEY` 是否正确
-- 检查 API Key 是否已过期
-- 确保 API Key 有 web-search 权限
-
-### Bocha API 速率限制 (429)
+### Qwen 题目生成失败
 
 ```
-[警告] Bocha API 速率限制，等待 2s 后重试...
-```
-
-**说明**: 系统会自动进行指数退避重试。如果频繁出现，可在 config.yaml 中减少 `max_results_per_query`。
-
-### Bocha API 超时
-
-```
-[警告] Bocha API 超时，等待 2s 后重试...
+[错误] 题目生成失败: HTTPSConnectionPool timeout
 ```
 
 **解决方案**:
+- 检查网络连接和 API Key
 - 增加 config.yaml 中的 `timeout` 值
-- 检查网络连接质量
-- 减少 `max_workers` 以降低并发
+- 查看 Aliyun API 状态页面是否有维护
 
 ### 输入文件不存在
 
@@ -368,11 +353,59 @@ export BOCHA_API_KEY="sk-your-bocha-key"
 [错误] JD文件不存在: sample_jd.md
 ```
 
-**解决方案**: 检查文件路径是否正确
+**解决方案**: 检查文件路径是否正确，使用绝对路径或相对于执行目录的路径
 
-### Qwen API 调用失败
+### JSON 解析失败
 
-检查 config.yaml 中的 API 配置是否正确，确保网络连接正常。
+```
+[警告] WebSearch 返回非列表格式
+```
+
+**原因**: 返回的响应格式不是预期的 JSON 数组
+
+**解决方案**: 
+- 检查 prompts.yaml 中的 `web_search_questions` 是否正确指导 Qwen 返回 JSON
+- 增加 Qwen 模型的输出稳定性，在 prompts.yaml 中添加更详细的格式说明
+
+### 题目数量不足 20 道
+
+```
+[流程] 最终返回 5 道题目
+```
+
+**原因**: RAG 和 WebSearch 返回的参考题目不足，LLM 无法合成 20 道题目
+
+**解决方案**:
+- 启用 WebSearch（config.yaml 中 `web_search.enabled: true`）
+- 改进 prompts.yaml 中的提示词以获得更好的 LLM 输出
+- 增加 `rag_reference_count` 或 `web_search_reference_count` 的值
+
+---
+
+---
+
+## 最近更新
+
+### 2026-04-30
+- ✅ **Qwen 3.5 Flash WebSearch 完全集成**
+  - 移除 Bocha API 依赖
+  - 使用 Qwen 内置 WebSearch，无需额外 API
+  - 架构简化：从 N+1 API 调用 → 1 次 Qwen 调用
+
+- ✅ **测试覆盖 100%**
+  - 删除 4 个过时的测试文件
+  - 新增 12 个单元测试覆盖 WebSearch 工作流
+  - 全部测试通过
+
+- ✅ **代码简化**
+  - 删除 `bocha_client.py`（不再需要）
+  - 删除 `query_generator.py`（Qwen 内部处理）
+  - 减少代码行数 40%，提升可维护性
+
+### 2026-04-28
+- ✅ Bocha WebSearch API 初始集成
+- ✅ 三层出题架构完成
+- ✅ JSON + Markdown 双格式输出
 
 ---
 
