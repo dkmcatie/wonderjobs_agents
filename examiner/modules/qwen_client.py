@@ -4,7 +4,7 @@ import requests
 from typing import List, Dict
 
 
-def call_api(system_prompt: str, user_prompt: str, config: Dict) -> str:
+def call_api(system_prompt: str, user_prompt: str, config: Dict, enable_search: bool = False, search_options: Dict = None) -> str:
     qwen_config = config.get("qwen", {})
     api_base = qwen_config.get("api_base")
     api_key = os.getenv("ALIYUN_API_KEY") or qwen_config.get("api_key", "").replace("${ALIYUN_API_KEY}", "")
@@ -26,6 +26,11 @@ def call_api(system_prompt: str, user_prompt: str, config: Dict) -> str:
         ],
         "stream": False
     }
+
+    if enable_search:
+        payload["enable_search"] = True
+        if search_options:
+            payload["search_options"] = search_options
 
     # 如果 api_base 以 /compatible-mode/v1 结尾，使用兼容模式
     if api_base.endswith("/compatible-mode/v1"):
