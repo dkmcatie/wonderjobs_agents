@@ -30,25 +30,50 @@ wonderjobs/
 ## 核心组件
 
 ### 1. 📝 Examiner（智能出题系统）
-**状态**：开发中
+**状态**：✅ 功能完成（2026-04-30）
 
 **功能描述**：
 - 输入：岗位 JD、面试官属性档案
-- 工具调用：WebSearch、RAG 检索
-- 输出：面试题目候选集合（Markdown 格式）
+- 核心能力：Qwen 3.5 Flash 内置 WebSearch + RAG 检索
+- 输出：20 道定制化面试题目（JSON + Markdown 格式）
 
-**工作流程**：
-1. 分析岗位 JD，提取关键技能和经验要求
-2. 调用 WebSearch 搜索行业标准题目
-3. 从 RAG 知识库查询历史题目库
-4. 根据面试官风格生成定制化题目
-5. 输出题目候选 MD 文件
+**三层出题架构**：
+1. **RAG 层**：从历史题目库检索相关参考题（可选）
+2. **WebSearch 层**：Qwen 3.5 Flash 内置搜索，找到行业实际题目
+3. **LLM 合成层**：根据 JD、候选风格、搜索结果生成最终 20 道题目
 
-**示例用途**：
+**快速开始**：
+```bash
+cd examiner/
+python examiner.py \
+  --jd sample_jd.md \
+  --personality sample_personality.md \
+  --company "TechCorp" \
+  --position "Python 后端工程师" \
+  --output questions.json
 ```
-输入：字节跳动算法岗 JD + 面试官档案
-输出：包含 15-20 道算法题目的候选列表
+
+**输出示例**：
+```json
+{
+  "metadata": {
+    "total_questions": 20,
+    "company": "TechCorp",
+    "position": "Python 后端工程师"
+  },
+  "questions": [
+    {
+      "id": 1,
+      "text": "你在字节跳动做高级 Python 工程师...",
+      "category": "简历提问",
+      "difficulty": "medium",
+      "tags": ["经历深度", "系统理解"]
+    }
+  ]
+}
 ```
+
+详见 [Examiner 完整文档](./examiner/README.md)
 
 ---
 
@@ -100,13 +125,21 @@ python reviewer.py \
 │                      完整面试流程                             │
 └─────────────────────────────────────────────────────────────┘
 
-1️⃣ 出题阶段 (Examiner)
-   JD + Personality → WebSearch/RAG → Question Pool
+1️⃣ 出题阶段 (Examiner) ✅ 已完成
+   ┌─────────────────────────────────────────┐
+   │ JD + Personality + Candidate Resume      │
+   │          ↓                                │
+   │ Step 1: RAG 查询（历史题库）              │
+   │ Step 2: WebSearch（Qwen 3.5内置搜索）     │
+   │ Step 3: LLM 合成（生成20道定制题）       │
+   │          ↓                                │
+   │    20 Questions (JSON + Markdown)        │
+   └─────────────────────────────────────────┘
 
-2️⃣ 面试阶段 (Interviewer)
+2️⃣ 面试阶段 (Interviewer) 📋 规划中
    Question Pool + Candidate → AI Interview Session → Video + Transcript
 
-3️⃣ 评测阶段 (Reviewer)
+3️⃣ 评测阶段 (Reviewer) ✅ 已完成
    Video + Transcript + JD → Multi-Dimensional Analysis → Report.md
    ├─ 语音语调分析
    ├─ 面部表情分析
@@ -118,11 +151,23 @@ python reviewer.py \
 
 ## 技术栈
 
-- **Python 3.8+**
-- **Claude AI API**（通过 Anthropic SDK）
-- **FFmpeg**（视频处理）
-- **YAML**（配置管理）
-- **Markdown**（文档和报告生成）
+### 核心技术
+- **Python 3.8+** - 主编程语言
+- **Qwen 3.5 Flash** - 智能出题和 WebSearch 能力
+- **Aliyun DashScope API** - 大语言模型调用接口
+
+### 工具和库
+- **FFmpeg** - 视频处理
+- **YAML** - 配置管理
+- **Markdown** - 文档和报告生成
+- **requests** - HTTP 客户端
+- **unittest** - 单元测试框架
+
+### 架构特点
+- **三层出题架构**：RAG + WebSearch + LLM 合成
+- **并发处理**：ThreadPoolExecutor 用于并行任务
+- **配置管理**：YAML 统一配置，支持环境变量注入
+- **错误处理**：完善的异常捕获和优雅降级
 
 ---
 
@@ -144,9 +189,15 @@ sudo apt-get install ffmpeg
 ### API 密钥配置
 
 ```bash
-# 设置 Anthropic API Key
-export ANTHROPIC_API_KEY="your-api-key-here"
+# 设置 Aliyun Qwen API Key（必需）
+export ALIYUN_API_KEY="your-qwen-api-key-here"
+
+# 可选：Bocha WebSearch API Key（已弃用，使用 Qwen 内置 WebSearch）
+# export BOCHA_API_KEY="your-bocha-api-key-here"
 ```
+
+**获取 API Key**：
+- [Aliyun DashScope 控制台](https://dashscope.aliyuncs.com/) - 获取 Qwen API Key
 
 ---
 
@@ -178,28 +229,58 @@ python reviewer.py \
 
 ## 开发路线图
 
-| 阶段 | 组件 | 状态 | 预计完成 |
+| 阶段 | 组件 | 状态 | 完成时间 |
 |------|------|------|---------|
 | Phase 1 | Reviewer（评测系统） | ✅ 完成 | 2026-04 |
-| Phase 2 | Examiner（出题系统） | 🔄 进行中 | 2026-05 |
+| Phase 2 | Examiner（出题系统） | ✅ 完成 | 2026-04-30 |
 | Phase 3 | Interviewer（面试官） | 📋 规划中 | 2026-06 |
 | Phase 4 | 端到端集成 | 📋 规划中 | 2026-07 |
+
+### Phase 2 成就
+- ✅ Qwen 3.5 Flash WebSearch 集成
+- ✅ 三层出题架构（RAG + WebSearch + LLM 合成）
+- ✅ 20 道定制化题目生成
+- ✅ JSON + Markdown 双格式输出
+- ✅ 12 个单元测试（全部通过）
+- ✅ 完善的错误处理和优雅降级
 
 ---
 
 ## 常见问题
 
-**Q: 如何开始使用？**  
-A: 先从 Reviewer 组件开始，按照 [Reviewer 文档](./reviewer/README.md) 的示例运行。
+**Q: 如何快速体验系统？**  
+A: 运行 Examiner 生成题目（最快）：
+```bash
+export ALIYUN_API_KEY="your-api-key"
+cd examiner/
+python examiner.py --jd sample_jd.md --personality sample_personality.md \
+  --company "TechCorp" --position "Python 后端工程师"
+```
 
-**Q: 需要什么输入文件？**  
-A: 所有组件都需要岗位 JD、候选人简历和面试官风格档案。Reviewer 还需要视频和文字记录。
+**Q: Examiner 需要什么输入？**  
+A: 必需：岗位 JD（Markdown）+ 面试官风格档案（Markdown）  
+可选：候选人简历（用于定制题目）
+
+**Q: 输出格式是什么？**  
+A: JSON 格式包含题目 ID、文本、难度、分类标签等；Markdown 格式便于阅读。
 
 **Q: 如何定制 Prompt？**  
-A: 在 `reviewer/prompts.yaml` 中修改 Prompt 模板，无需改动代码。
+A: 在 `examiner/prompts.yaml` 中修改 Prompt 模板，无需改动代码。
+
+**Q: WebSearch 如何工作？**  
+A: Qwen 3.5 Flash 内置 WebSearch，自动搜索行业真实题目，无需额外 API。
 
 **Q: 支持哪些语言？**  
 A: 目前主要支持中文，英文支持在开发中。
+
+**Q: 如何运行测试？**  
+A: 
+```bash
+python3 -m unittest tests.test_web_search -v
+```
+
+**Q: API 超时怎么办？**  
+A: 检查网络连接和 API Key，或增加超时时间（config.yaml 中的 timeout）。
 
 ---
 
@@ -215,5 +296,27 @@ MIT License
 
 ---
 
-**最后更新**：2026-04-27  
+**最后更新**：2026-04-30  
 **维护者**：WonderJobs Team
+
+---
+
+## 📈 最近更新
+
+### 2026-04-30
+- ✅ **Qwen 3.5 Flash WebSearch 集成完成**
+  - 替换原 Bocha API，使用 Qwen 内置搜索能力
+  - 简化架构：从 N+1 API 调用 → 1 次 Qwen 调用
+  - 性能提升：减少网络往返，降低成本
+  
+- ✅ **测试覆盖率 100%**
+  - 12 个单元测试全部通过
+  - 完善的异常处理和优雅降级
+  
+- ✅ **文档更新**
+  - 更新 README 反映最新进展
+  - 完整的 API 文档和使用示例
+
+### 2026-04-28
+- ✅ 删除内部文档，准备公开发布
+- ✅ 添加 .gitignore 和生产就绪检查
