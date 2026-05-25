@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.so
 .Python
@@ -27,3 +28,9 @@ examiner/outputs/*
 # 临时目录
 .cc-connect/
 *.log
+
+# Worktrees
+.worktrees/
+
+# Dispatcher
+dispatcher/index/skill_index.json
