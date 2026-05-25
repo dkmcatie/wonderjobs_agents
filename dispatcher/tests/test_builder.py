@@ -36,3 +36,30 @@ def test_generate_examples_calls_llm_and_parses_lines():
             n=3,
         )
     assert examples == ["示例一", "示例二", "示例三"]
+
+
+import numpy as np
+from builder import compute_centroid, build_index
+
+def test_compute_centroid_averages_vectors():
+    vectors = [[1.0, 0.0], [0.0, 1.0]]
+    result = compute_centroid(vectors)
+    assert result == pytest.approx([0.5, 0.5])
+
+def test_compute_centroid_single_vector():
+    assert compute_centroid([[0.3, 0.7]]) == pytest.approx([0.3, 0.7])
+
+def test_build_index_returns_centroid_per_skill():
+    skills = [
+        {"name": "skill_a", "description": "do a", "parameters": {}, "examples": ["a1", "a2"]},
+    ]
+    fake_embeddings = [[1.0, 0.0], [0.0, 1.0]]
+    with patch("builder._embed", return_value=fake_embeddings):
+        index = build_index(skills, api_key="test", config={
+            "embedding": {"model": "text-embedding-v3"},
+            "llm_fallback": {"model": "qwen-plus"},
+            "builder": {"examples_per_skill": 30},
+        })
+    assert "skill_a" in index
+    assert index["skill_a"]["centroid"] == pytest.approx([0.5, 0.5])
+    assert index["skill_a"]["description"] == "do a"
