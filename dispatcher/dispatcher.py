@@ -99,3 +99,32 @@ def _llm_fallback(user_input: str, candidates: list, gap: float, config: dict, a
         "params": {},
         "message": f"你是想要：{options}？",
     }
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Dispatcher: route user input to a skill")
+    parser.add_argument("input", help="用户输入")
+    parser.add_argument("--config", default="config.yaml")
+    parser.add_argument("--index", default=None)
+    args = parser.parse_args()
+
+    with open(args.config) as f:
+        config = yaml.safe_load(f)
+
+    index_path = args.index or config["builder"]["index_path"]
+    if not os.path.exists(index_path):
+        print(f"Error: index not found at {index_path}. Run: python builder.py", file=sys.stderr)
+        sys.exit(1)
+
+    with open(index_path) as f:
+        index = json.load(f)
+
+    api_key = os.environ[config["embedding"]["api_key_env"]]
+    result = route(args.input, index, config, api_key=api_key)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
