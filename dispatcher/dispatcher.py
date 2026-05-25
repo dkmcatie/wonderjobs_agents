@@ -21,7 +21,7 @@ def route(user_input: str, index: dict, config: dict, api_key: str) -> dict:
     query_vec = embed([user_input], api_key=api_key, model=config["embedding"]["model"])[0]
 
     scores = {
-        name: float(np.dot(np.array(query_vec), np.array(data["centroid"])))
+        name: cosine_similarity(query_vec, data["centroid"])
         for name, data in index.items()
     }
     ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)

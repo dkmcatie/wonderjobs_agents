@@ -36,7 +36,7 @@ def test_route_unknown_when_all_scores_low():
         "routing": {"gap_threshold": 0.15, "min_score_threshold": 0.3, "top_k_for_llm": 3},
         "llm_fallback": {"model": "qwen-plus"},
     }
-    with patch("dispatcher.embed", return_value=[[0.1, 0.1]]):
+    with patch("dispatcher.embed", return_value=[[-0.5, -0.5]]):
         result = route("xyzxyz", index, config, api_key="test")
     assert result["route"] == "unknown"
     assert result["skill"] is None
