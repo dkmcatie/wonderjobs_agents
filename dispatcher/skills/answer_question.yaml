@@ -1,0 +1,10 @@
+name: answer_question
+description: 回答知识性问题，解释概念、原理或历史事件
+parameters:
+  question: "问题内容"
+examples:
+  - "量子计算是什么原理"
+  - "法国大革命是什么时候发生的"
+  - "解释一下什么是机器学习"
+  - "黑洞是怎么形成的"
+  - "相对论是什么意思"

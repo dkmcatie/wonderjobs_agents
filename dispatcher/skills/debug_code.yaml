@@ -1,0 +1,11 @@
+name: debug_code
+description: 调试已有代码，定位错误原因并给出修复方案
+parameters:
+  code: "有问题的代码"
+  error: "报错信息（可选）"
+examples:
+  - "这段代码为什么报错"
+  - "帮我看看这个 bug 在哪"
+  - "IndexError 是什么原因"
+  - "我的代码跑不起来，帮我检查一下"
+  - "这个函数返回了错误的结果，帮我 debug"

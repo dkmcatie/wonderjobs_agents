@@ -1,0 +1,12 @@
+name: schedule_meeting
+description: 安排会议、日程提醒或日历事件
+parameters:
+  title: "会议主题"
+  time: "时间"
+  participants: "参与者（可选）"
+examples:
+  - "帮我安排明天下午三点的周会"
+  - "约一个下周五的项目评审会议"
+  - "设置一个每天早上九点的提醒"
+  - "帮我把这个会议推迟到下周"
+  - "安排一个和客户的视频会议"

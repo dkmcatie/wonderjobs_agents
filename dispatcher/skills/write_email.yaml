@@ -1,0 +1,12 @@
+name: write_email
+description: 撰写各类邮件，包括工作邮件、请假邮件、感谢信等
+parameters:
+  purpose: "邮件用途"
+  recipient: "收件人（可选）"
+  tone: "语气，如正式/轻松（可选）"
+examples:
+  - "帮我写一封请假邮件"
+  - "写一封感谢客户的邮件"
+  - "帮我起草一封项目进展汇报邮件"
+  - "写一封拒绝 offer 的邮件"
+  - "帮我写一封催款邮件"

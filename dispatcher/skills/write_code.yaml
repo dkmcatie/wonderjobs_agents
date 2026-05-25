@@ -1,0 +1,11 @@
+name: write_code
+description: 编写新的代码片段、函数、脚本或完整程序
+parameters:
+  task: "需要实现的功能描述"
+  language: "编程语言（可选）"
+examples:
+  - "帮我写一个快速排序算法"
+  - "用 Python 实现一个文件读取脚本"
+  - "写一个 React 登录表单组件"
+  - "帮我写一个爬虫抓取商品价格"
+  - "实现一个二分查找函数"

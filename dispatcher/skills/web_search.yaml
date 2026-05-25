@@ -1,0 +1,10 @@
+name: web_search
+description: 搜索网络信息，查询实时数据、新闻、天气等
+parameters:
+  query: "搜索关键词"
+examples:
+  - "帮我查一下今天北京的天气"
+  - "搜一下最新的 iPhone 价格"
+  - "查询一下今天的 A 股行情"
+  - "帮我找一下附近的咖啡店"
+  - "搜索一下 Python 最新版本"
