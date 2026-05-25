@@ -1,0 +1,17 @@
+embedding:
+  model: text-embedding-v3
+  api_key_env: DASHSCOPE_API_KEY
+
+routing:
+  gap_threshold: 0.15
+  min_score_threshold: 0.3
+  top_k_for_llm: 3
+
+llm_fallback:
+  model: qwen-plus
+  api_key_env: DASHSCOPE_API_KEY
+
+builder:
+  examples_per_skill: 30
+  skills_dir: skills
+  index_path: index/skill_index.json
