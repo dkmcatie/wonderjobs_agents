@@ -55,6 +55,47 @@ def route(user_input: str, index: dict, config: dict, api_key: str) -> dict:
     return _llm_fallback(user_input, candidates, gap, config, api_key)
 
 
-def _llm_fallback(user_input, candidates, gap, config, api_key):
-    # placeholder — replaced in Task 7
-    return {"skill": None, "confidence": round(gap, 4), "route": "clarify", "params": {}, "message": ""}
+def llm_rerank(user_input: str, candidates: list, api_key: str, model: str) -> dict:
+    lines = "\n".join(
+        f"{i+1}. {c['name']}: {c['description']}" for i, c in enumerate(candidates)
+    )
+    prompt = (
+        f'用户说："{user_input}"\n\n'
+        f"以下是候选功能：\n{lines}\n\n"
+        '请选择最合适的一个，只输出 JSON，格式：\n'
+        '{"skill": "<name>", "confident": true/false, "reason": "<原因>"}\n'
+        "如无法确定，将 confident 设为 false。"
+    )
+    response = requests.post(
+        f"{API_BASE}/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json={"model": model, "messages": [{"role": "user", "content": prompt}]},
+    )
+    response.raise_for_status()
+    content = response.json()["choices"][0]["message"]["content"]
+    return json.loads(content)
+
+
+def _llm_fallback(user_input: str, candidates: list, gap: float, config: dict, api_key: str) -> dict:
+    result = llm_rerank(
+        user_input,
+        candidates,
+        api_key=api_key,
+        model=config["llm_fallback"]["model"],
+    )
+    if result.get("confident", False):
+        return {
+            "skill": result["skill"],
+            "confidence": round(gap, 4),
+            "route": "llm_fallback",
+            "params": {},
+            "message": "",
+        }
+    options = " / ".join(c["name"] for c in candidates)
+    return {
+        "skill": None,
+        "confidence": round(gap, 4),
+        "route": "clarify",
+        "params": {},
+        "message": f"你是想要：{options}？",
+    }
